@@ -1,0 +1,60 @@
+### 
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Rahul",
+  "email": "rahul@gmail.com",
+  "password": "123456",
+  "role": "donor",
+  "bloodGroup": "A+",
+  "phone": "9876543210",
+  "location": {
+    "type": "Point",
+    "coordinates": [72.8777, 19.0760]
+  }
+}
+
+###
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "rahul@gmail.com",
+  "password": "123456"
+}
+
+### get details of all donors for a specific blood group and location
+GET http://localhost:5000/api/request/donors?bloodGroup=A%2B&location=Mumbai
+
+### get all requests for hospital
+GET http://localhost:5000/api/request/all-users
+###
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Amit",
+  "email": "amit@gmail.com",
+  "password": "123456",
+  "role": "donor",
+  "bloodGroup": "A+",
+  "location": "Mumbai",
+  "phone": "9999999999"
+}
+###
+POST http://localhost:5000/api/request
+Content-Type: application/json
+
+{
+  "bloodGroup": "A+",
+  "location": "Mumbai",
+  "urgency": "high",
+  "contactNumber": "9876543210",
+  "hospitalName": "City Hospital",
+  "role": "donor"
+}
+
+###
+GET http://localhost:5000/api/request/donors?bloodGroup=A%2B&lat=19.0760&lng=72.8777
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjk5NDRiYTVlZjI1ZWE4N2U1NjFjZSIsInJvbGUiOiJkb25vciIsImlhdCI6MTc4MTEwOTg1MywiZXhwIjoxNzgxMTk2MjUzfQ.jQ3d6sL5Uz04CwuKO4c215-NrOeTRzA3FIwIGnroqXw

@@ -1,0 +1,62 @@
+### hospital registration
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "City Hospital",
+  "email": "hospital@gmail.com",
+  "password": "123456",
+  "role": "hospital",
+  "phone": "8888888888",
+  "location": {
+    "type": "Point",
+    "coordinates": [72.8777, 19.0760]
+  }
+}
+
+### hospital login (get token)
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "hospital@gmail.com",
+  "password": "123456"
+}
+
+### u will get a token in response, use that token for creating blood request
+
+### creating request (protected) ( only for hospital it)
+POST http://localhost:5000/api/request
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "bloodGroup": "A+",
+  "location": "Mumbai",
+  "urgency": "high",
+  "contactNumber": "9876543210",
+  "hospitalName": "City Hospital"
+}
+
+###Trigger SOS
+POST http://localhost:5000/api/request/sos
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjk0NDdkZWJiMGRjYWY2M2JkMTA2YSIsInJvbGUiOiJob3NwaXRhbCIsImlhdCI6MTc4MTA5MDMzMywiZXhwIjoxNzgxMTc2NzMzfQ.dCnmnoIySPZlCva3mPMnd7_bteKaRIcpFNIOxxMTh2k
+
+{
+  "bloodGroup": "A+",
+  "location": "Mumbai"
+}
+
+### call donors api with token 
+GET http://localhost:5000/api/request/donors?bloodGroup=A%2B&location=Mumbai
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjk5MDEwNDYzNjk1N2I4YmQ4M2I0NyIsInJvbGUiOiJob3NwaXRhbCIsImlhdCI6MTc4MTEwODc1NCwiZXhwIjoxNzgxMTk1MTU0fQ.dBgCD76f3c2EZsLoyNLOOgXx91OwIqvy0Qv4B4zEOHs
+
+###
+GET http://localhost:5000/api/request/donors?bloodGroup=A+&lat=19.0760&lng=72.8777
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjk5MDEwNDYzNjk1N2I4YmQ4M2I0NyIsInJvbGUiOiJob3NwaXRhbCIsImlhdCI6MTc4MTEwOTQyMywiZXhwIjoxNzgxMTk1ODIzfQ.veMBZJNMEeRbX8yC43_g70vT9Z8FFl0MvB84lB4gLrA
+
+###
+
+GET http://localhost:5000/api/request/donors?bloodGroup=A%2B&lat=19.0760&lng=72.8777
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjk5NTEyNTk1ZjNjMjExMzQ3MjRkOSIsInJvbGUiOiJob3NwaXRhbCIsImlhdCI6MTc4MTExMDAzNywiZXhwIjoxNzgxMTk2NDM3fQ.4exSQRp1PwTLLE6N4yyVWeEk2vhNDpeUBw-WHS9O50Q

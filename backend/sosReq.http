@@ -1,0 +1,20 @@
+### request for creating blood request
+POST http://localhost:5000/api/request/sos
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjk0NDdkZWJiMGRjYWY2M2JkMTA2YSIsInJvbGUiOiJob3NwaXRhbCIsImlhdCI6MTc4MTEwNjczMywiZXhwIjoxNzgxMTkzMTMzfQ.uQuee04XWCxi6AFvybsgYBZa7i7s-oHECaqwaEC_mig
+
+{
+  "bloodGroup": "A+",
+  "location": "Mumbai"
+}
+
+### test with lat and lng 
+POST http://localhost:5000/api/request/sos
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjk5NTEyNTk1ZjNjMjExMzQ3MjRkOSIsInJvbGUiOiJob3NwaXRhbCIsImlhdCI6MTc4MTE1MTk2NiwiZXhwIjoxNzgxMjM4MzY2fQ.YH8SpZwLErZ7JI3Ck2baufwfBvu_vv9c_vgIZ_OJ4KY // token of hospital user
+Content-Type: application/json
+
+{
+  "bloodGroup": "A+",
+  "lat": 19.0760,
+  "lng": 72.8777
+}
