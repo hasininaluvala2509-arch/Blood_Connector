@@ -195,8 +195,12 @@ export default function FindDonors() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginTop: 18, color: "#334155" }}>
                 <div>Blood group: <strong>{alert.bloodGroup}</strong></div>
-                <div>Urgency: <strong>{alert.urgency}</strong></div>
+                <div>Needed by: <strong>{alert.neededBy ? new Date(alert.neededBy).toLocaleString() : "Not set"}</strong></div>
                 <div>Contact: <strong>{alert.contactNumber}</strong></div>
+              </div>
+              <div style={{ marginTop: 12, color: "#334155" }}>
+                <div>Hospital address: <strong>{alert.hospitalAddress || "Not provided"}</strong></div>
+                <div>Alert posted: <strong>{alert.createdAt ? new Date(alert.createdAt).toLocaleString() : "Unknown"}</strong></div>
               </div>
               <button
                 style={{ marginTop: 18, background: "#b91c1c", color: "white", border: "none", padding: "12px 18px", borderRadius: 12, cursor: "pointer" }}

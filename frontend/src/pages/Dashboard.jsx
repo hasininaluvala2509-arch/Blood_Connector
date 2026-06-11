@@ -10,7 +10,7 @@ export default function Dashboard() {
   const [alerts, setAlerts] = useState([]);
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [matchedDonors, setMatchedDonors] = useState([]);
-  const [form, setForm] = useState({ bloodGroup: "A+", location: "", urgency: "High", contactNumber: "", hospitalName: "", lat: "19.0760", lng: "72.8777" });
+  const [form, setForm] = useState({ bloodGroup: "A+", location: "", neededByDate: "", neededByTime: "", contactNumber: "", lat: "19.0760", lng: "72.8777" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -62,19 +62,25 @@ export default function Dashboard() {
   };
 
   const createRequest = async () => {
+    if (!form.neededByDate || !form.neededByTime) {
+      setError("Please select the needed by date and time.");
+      setMessage("");
+      return;
+    }
+
     try {
+      const neededBy = `${form.neededByDate}T${form.neededByTime}`;
       await API.post("/request", {
         bloodGroup: form.bloodGroup,
         location: form.location,
         lat: parseFloat(form.lat),
         lng: parseFloat(form.lng),
-        urgency: form.urgency,
-        contactNumber: form.contactNumber,
-        hospitalName: form.hospitalName || profile?.hospitalName || profile?.name
+        neededBy,
+        contactNumber: form.contactNumber
       });
       setMessage("Alert created successfully.");
       setError("");
-      setForm({ ...form, location: "", contactNumber: "" });
+      setForm({ ...form, location: "", neededByDate: "", neededByTime: "", contactNumber: "" });
       fetchStats();
     } catch (err) {
       setError(err.response?.data || "Unable to create alert.");
@@ -177,16 +183,26 @@ export default function Dashboard() {
                 </select>
               </div>
               <div>
-                <label style={{ display: "block", marginBottom: 8, color: "#475569" }}>Urgency</label>
-                <select
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
-                  value={form.urgency}
-                  onChange={(e) => setForm({ ...form, urgency: e.target.value })}
-                >
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
+                <label style={{ display: "block", marginBottom: 8, color: "#475569" }}>Needed by</label>
+                <div style={{ display: "grid", gap: 12 }}>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().slice(0, 10)}
+                    value={form.neededByDate}
+                    onChange={(e) => setForm({ ...form, neededByDate: e.target.value })}
+                    style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
+                  />
+                  <input
+                    type="time"
+                    min={form.neededByDate === new Date().toISOString().slice(0, 10)
+                      ? new Date(Date.now() + 10 * 60 * 1000).toTimeString().slice(0, 5)
+                      : "00:00"
+                    }
+                    value={form.neededByTime}
+                    onChange={(e) => setForm({ ...form, neededByTime: e.target.value })}
+                    style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
+                  />
+                </div>
               </div>
             </div>
             <div>
@@ -251,7 +267,9 @@ export default function Dashboard() {
                     <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
                       <div>
                         <h4 style={{ margin: 0, color: "#0f172a" }}>{alert.location}</h4>
-                        <p style={{ margin: "8px 0 0", color: "#475569" }}>{alert.bloodGroup} • {alert.urgency}</p>
+                        <p style={{ margin: "8px 0 0", color: "#475569" }}>
+                          {alert.bloodGroup} • Needed by {alert.neededBy ? new Date(alert.neededBy).toLocaleString() : "Not set"}
+                        </p>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                         <span style={{ background: alert.status === "open" ? "#fee2e2" : alert.status === "completed" ? "#fee2e2" : "#fef3c7", color: alert.status === "completed" ? "#7f1d1d" : alert.status === "dismissed" ? "#92400e" : "#991b1b", padding: "8px 12px", borderRadius: 12 }}>

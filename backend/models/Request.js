@@ -15,9 +15,13 @@ const requestSchema = new mongoose.Schema(
         required: true
       }
     },
-    urgency: String,
+    neededBy: {
+      type: Date,
+      required: true
+    },
     contactNumber: String,
     hospitalName: String,
+    hospitalAddress: String,
     hospitalId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"

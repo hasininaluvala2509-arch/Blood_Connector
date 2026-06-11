@@ -14,13 +14,24 @@ router.post("/", verifyToken, checkRole("hospital"), async (req, res) => {
       location,
       lat,
       lng,
-      urgency,
-      contactNumber,
-      hospitalName
+      neededBy,
+      contactNumber
     } = req.body;
 
-    if (!bloodGroup || !location || lat == null || lng == null || !urgency || !contactNumber || !hospitalName) {
+    if (!bloodGroup || !location || lat == null || lng == null || !neededBy || !contactNumber) {
       return res.status(400).json("All fields are required");
+    }
+
+    const neededByDate = new Date(neededBy);
+    const now = new Date();
+    if (Number.isNaN(neededByDate.getTime())) {
+      return res.status(400).json("The neededBy date is invalid");
+    }
+    if (neededByDate < now) {
+      return res.status(400).json("Needed by date/time must be in the future");
+    }
+    if (neededByDate - now < 10 * 60 * 1000) {
+      return res.status(400).json("Needed by date/time must be at least 10 minutes from now");
     }
 
     const latitude = Number(lat);
@@ -29,6 +40,14 @@ router.post("/", verifyToken, checkRole("hospital"), async (req, res) => {
       return res.status(400).json("Latitude and longitude must be valid numbers");
     }
 
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json("Hospital user not found");
+    }
+
+    const hospitalName = user.hospitalName || user.name;
+    const hospitalAddress = user.address || "";
+
     const newRequest = new Request({
       bloodGroup,
       location,
@@ -36,9 +55,10 @@ router.post("/", verifyToken, checkRole("hospital"), async (req, res) => {
         type: "Point",
         coordinates: [longitude, latitude]
       },
-      urgency,
+      neededBy: neededByDate,
       contactNumber,
       hospitalName,
+      hospitalAddress,
       hospitalId: req.user.id
     });
 
