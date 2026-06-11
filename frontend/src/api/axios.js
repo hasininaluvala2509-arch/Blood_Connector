@@ -1,7 +1,10 @@
 import axios from "axios";
 
 // Use Vite env variable `VITE_API_BASE` when provided, fallback to localhost for development
-const BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+const rawBase = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+const BASE = rawBase.endsWith("/api")
+  ? rawBase
+  : rawBase.replace(/\/+$/, "") + "/api";
 
 const API = axios.create({
   baseURL: BASE,
