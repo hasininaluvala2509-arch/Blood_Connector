@@ -6,6 +6,39 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
   const [profile, setProfile] = useState(null);
+
+  const normalizeTime = (time) => {
+    if (!time) return "";
+    const ampmMatch = time.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+    if (!ampmMatch) return time;
+    let hours = parseInt(ampmMatch[1], 10);
+    const minutes = ampmMatch[2];
+    const period = ampmMatch[3].toUpperCase();
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+    return `${hours.toString().padStart(2, "0")}:${minutes}`;
+  };
+
+  const normalizeDate = (date) => {
+    if (!date) return "";
+    const dmyMatch = date.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (dmyMatch) return `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
+    const mdyMatch = date.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (mdyMatch) return `${mdyMatch[3]}-${mdyMatch[1]}-${mdyMatch[2]}`;
+    const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) return date;
+    return date;
+  };
+
+  const normalizeDateTime = (dateValue, timeValue) => {
+    const date = normalizeDate(dateValue);
+    const time = normalizeTime(timeValue);
+    if (!date || !time) return null;
+    const iso = `${date}T${time}`;
+    const parsed = new Date(iso);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
   const [stats, setStats] = useState({ emergenciesCount: 0, successfulMissions: 0 });
   const [alerts, setAlerts] = useState([]);
   const [selectedAlert, setSelectedAlert] = useState(null);
@@ -68,14 +101,20 @@ export default function Dashboard() {
       return;
     }
 
+    const neededByDate = normalizeDateTime(form.neededByDate, form.neededByTime);
+    if (!neededByDate) {
+      setError("Please select a valid needed by date and time.");
+      setMessage("");
+      return;
+    }
+
     try {
-      const neededBy = `${form.neededByDate}T${form.neededByTime}`;
       await API.post("/request", {
         bloodGroup: form.bloodGroup,
         location: form.location,
         lat: parseFloat(form.lat),
         lng: parseFloat(form.lng),
-        neededBy,
+        neededBy: neededByDate.toISOString(),
         contactNumber: form.contactNumber
       });
       setMessage("Alert created successfully.");
@@ -189,7 +228,7 @@ export default function Dashboard() {
                     type="date"
                     min={new Date().toISOString().slice(0, 10)}
                     value={form.neededByDate}
-                    onChange={(e) => setForm({ ...form, neededByDate: e.target.value })}
+                    onChange={(e) => setForm({ ...form, neededByDate: normalizeDate(e.target.value) })}
                     style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
                   />
                   <input
@@ -199,7 +238,7 @@ export default function Dashboard() {
                       : "00:00"
                     }
                     value={form.neededByTime}
-                    onChange={(e) => setForm({ ...form, neededByTime: e.target.value })}
+                    onChange={(e) => setForm({ ...form, neededByTime: normalizeTime(e.target.value) })}
                     style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
                   />
                 </div>
