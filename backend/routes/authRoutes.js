@@ -195,6 +195,17 @@ router.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
+// GET ACTIVE DONORS COUNT
+router.get("/active-donors-count", verifyToken, async (req, res) => {
+  try {
+    const count = await User.countDocuments({ role: "donor", active: true });
+    res.json({ count });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json("Server error");
+  }
+});
+
 router.put("/profile", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);

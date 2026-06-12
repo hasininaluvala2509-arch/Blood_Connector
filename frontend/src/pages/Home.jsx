@@ -33,7 +33,6 @@ export default function Home() {
 
   useEffect(() => {
     if (!token) return;
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -45,20 +44,24 @@ export default function Home() {
 
     const loadCounts = async () => {
       try {
+        // active donors count (global) — keeps in sync with newly registered donors
+        const resCount = await API.get("/auth/active-donors-count");
+        const activeCount = resCount.data?.count ?? null;
+
         if (role === "donor") {
           const res = await API.get("/request/nearby");
           const alerts = Array.isArray(res.data) ? res.data : [];
           const todays = alerts.filter((alert) => isToday(alert.createdAt)).length;
-          setCounts({ activeDonors: alerts.length || null, requestsToday: todays || 0 });
+          setCounts({ activeDonors: activeCount, requestsToday: todays || 0 });
         } else if (role === "hospital") {
           const res = await API.get("/request/hospital");
           const alerts = Array.isArray(res.data.alerts) ? res.data.alerts : [];
           const todays = alerts.filter((alert) => isToday(alert.createdAt)).length;
-          setCounts({ activeDonors: null, requestsToday: todays || alerts.length || 0 });
+          setCounts({ activeDonors: activeCount, requestsToday: todays || alerts.length || 0 });
         } else {
-          setCounts({ activeDonors: null, requestsToday: null });
+          setCounts({ activeDonors: activeCount, requestsToday: null });
         }
-      } catch {
+      } catch (err) {
         setCounts({ activeDonors: null, requestsToday: null });
       }
     };
