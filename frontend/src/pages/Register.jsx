@@ -5,6 +5,7 @@ import API from "../api/axios";
 export default function Register() {
   const navigate = useNavigate();
   const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+  const [locationStatus, setLocationStatus] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -21,6 +22,29 @@ export default function Register() {
   });
   const [error, setError] = useState("");
 
+  const handleUseLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus("Geolocation is not supported in this browser.");
+      return;
+    }
+    setLocationStatus("Detecting current location...");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm((current) => ({
+          ...current,
+          lat: position.coords.latitude.toFixed(5),
+          lng: position.coords.longitude.toFixed(5),
+        }));
+        setLocationStatus("Location detected successfully.");
+      },
+      (error) => {
+        setLocationStatus(`Location error: ${error.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleRegister = async () => {
     try {
       const data = {
@@ -35,7 +59,7 @@ export default function Register() {
         lastDonationDate: form.role === "donor" ? form.lastDonationDate || undefined : undefined,
         location: {
           type: "Point",
-          coordinates: [parseFloat(form.lng), parseFloat(form.lat)]
+          coordinates: [parseFloat(form.lng || 0), parseFloat(form.lat || 0)]
         }
       };
 
@@ -93,7 +117,7 @@ export default function Register() {
             </select>
           </div>
           {form.role === "hospital" ? (
-            <> 
+            <>
               <div>
                 <label style={{ display: "block", marginBottom: 8, color: "#334155" }}>Hospital Name</label>
                 <input
@@ -138,6 +162,20 @@ export default function Register() {
               </div>
             </>
           )}
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              style={{ flex: 1, background: "#f87171", color: "white", border: "none", padding: 14, borderRadius: 12, cursor: "pointer", fontWeight: 700 }}
+              onClick={handleUseLocation}
+            >
+              Use my current location
+            </button>
+            <div style={{ flex: 1, minWidth: 180, alignSelf: "center", color: "#475569" }}>
+              {locationStatus || "Automatic GPS will fill latitude and longitude."}
+            </div>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ display: "block", marginBottom: 8, color: "#334155" }}>Latitude</label>

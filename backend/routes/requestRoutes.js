@@ -1,6 +1,7 @@
 import express from "express";
 import Request from "../models/Request.js";
 import User from "../models/User.js";
+import Chat from "../models/Chat.js";
 import { checkRole, verifyToken } from "../middleware/authMiddleware.js";
 import { sendSMS } from "../utils/sendSMS.js";
 
@@ -232,11 +233,13 @@ router.get("/donors", verifyToken, checkRole("hospital"), async (req, res) => {
   try {
     let { bloodGroup, lat, lng } = req.query;
 
-    if (!bloodGroup || lat == null || lng == null) {
+    if (lat == null || lng == null) {
       return res.status(400).json("bloodGroup, lat, and lng are required");
     }
 
-    bloodGroup = decodeURIComponent(bloodGroup);
+    if (bloodGroup) {
+      bloodGroup = decodeURIComponent(bloodGroup);
+    }
 
     const donors = await User.aggregate([
       {
@@ -253,7 +256,8 @@ router.get("/donors", verifyToken, checkRole("hospital"), async (req, res) => {
       {
         $match: {
           role: "donor",
-          bloodGroup
+          ...(bloodGroup ? { bloodGroup } : {}),
+          active: true
         }
       },
       {
@@ -286,13 +290,13 @@ router.get("/donors", verifyToken, checkRole("hospital"), async (req, res) => {
 // SOS ALERT (ALL ELIGIBLE DONORS WITHIN 30 KM)
 router.post("/sos", verifyToken, checkRole("hospital"), async (req, res) => {
   try {
-    let { bloodGroup, lat, lng } = req.body;
+    let { bloodGroup, lat, lng, description, contactNumber } = req.body;
 
-    if (!bloodGroup || lat == null || lng == null) {
-      return res.status(400).json("bloodGroup, lat, and lng are required");
+    if (lat == null || lng == null) {
+      return res.status(400).json("lat and lng are required");
     }
 
-    bloodGroup = decodeURIComponent(bloodGroup);
+    if (bloodGroup) bloodGroup = decodeURIComponent(bloodGroup);
 
     const donors = await User.aggregate([
       {
@@ -309,7 +313,8 @@ router.post("/sos", verifyToken, checkRole("hospital"), async (req, res) => {
       {
         $match: {
           role: "donor",
-          bloodGroup
+          ...(bloodGroup ? { bloodGroup } : {}),
+          active: true
         }
       },
       {
@@ -328,24 +333,48 @@ router.post("/sos", verifyToken, checkRole("hospital"), async (req, res) => {
     });
 
     if (eligibleDonors.length === 0) {
-      return res.json({ message: "No eligible donors found within 30 km.", donors: [] });
+      return res.json({ message: "", donors: [] });
     }
 
+    const hospital = await User.findById(req.user.id).lean();
+    const hospitalName = hospital?.hospitalName || hospital?.name || "Hospital";
+
+    const results = [];
+
     await Promise.all(
-      eligibleDonors.map((donor) =>
-        sendSMS(donor.phone, `?? URGENT: ${bloodGroup} blood needed near you`)
-      )
+      eligibleDonors.map(async (donor) => {
+        try {
+          // Send SMS if phone available
+          if (donor.phone) {
+            await sendSMS(donor.phone, `URGENT: ${bloodGroup || 'Blood'} needed near you. ${description || ''}`);
+          }
+
+          // create or find chat thread
+          let chat = await Chat.findOne({ donorId: donor._id, hospitalId: req.user.id });
+          if (!chat) {
+            chat = new Chat({
+              donorId: donor._id,
+              hospitalId: req.user.id,
+              donorName: donor.name,
+              hospitalName,
+              title: `SOS Alert: ${bloodGroup || 'Emergency'}`,
+              unreadFor: { donor: false, hospital: false }
+            });
+          }
+
+          const sosText = `SOS Alert from ${hospitalName}: ${bloodGroup ? bloodGroup + ' blood' : 'Blood needed'}${description ? ' — ' + description : ''}${contactNumber ? ' (Contact: ' + contactNumber + ')' : ''}`;
+          chat.messages.push({ senderId: req.user.id, senderRole: 'hospital', text: sosText });
+          chat.unreadFor = { donor: true, hospital: false };
+          await chat.save();
+
+          results.push({ id: donor._id, name: donor.name, phone: donor.phone, distance: (donor.distance / 1000).toFixed(2) + ' km', chatId: chat._id });
+        } catch (e) {
+          console.log('sos -> donor error', e);
+        }
+      })
     );
 
-    res.json({
-      message: "SOS alert sent to eligible donors within 30 km.",
-      donors: eligibleDonors.map((donor) => ({
-        id: donor._id,
-        name: donor.name,
-        phone: donor.phone,
-        distance: (donor.distance / 1000).toFixed(2) + " km"
-      }))
-    });
+    res.json({ message: "SOS alert sent to eligible donors within 30 km.", donors: results });
   } catch (error) {
     console.log(error);
     res.status(500).json("Server error");

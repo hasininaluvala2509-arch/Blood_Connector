@@ -92,7 +92,7 @@ export default function FindDonors() {
         hospitalName: alert.hospitalName,
         title: `Chat with ${alert.hospitalName}`
       });
-      navigate("/chat", { state: { chatId: res.data._id } });
+      navigate(`/chats/${res.data._id}`);
     } catch (err) {
       setError(err.response?.data || "Unable to start chat.");
     }

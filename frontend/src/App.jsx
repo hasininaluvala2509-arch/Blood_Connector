@@ -7,7 +7,6 @@ import Dashboard from "./pages/Dashboard";
 import FindDonors from "./pages/FindDonors";
 import Profile from "./pages/Profile";
 import Chats from "./pages/Chats";
-import Chat from "./pages/Chat";
 
 function App() {
   return (
@@ -21,7 +20,7 @@ function App() {
         <Route path="/find-donors" element={<FindDonors />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/chats" element={<Chats />} />
-        <Route path="/chat" element={<Chat />} />
+        <Route path="/chats/:chatId" element={<Chats />} />
       </Routes>
     </BrowserRouter>
   );

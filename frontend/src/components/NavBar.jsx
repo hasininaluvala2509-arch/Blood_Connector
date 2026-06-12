@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 
 export default function NavBar() {
@@ -43,15 +43,15 @@ export default function NavBar() {
   return (
     <div style={{ background: "white", color: "#0f172a", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderBottom: "1px solid #fee2e2" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ cursor: "pointer" }} onClick={() => navigate("/")}> 
+        <Link to="/" style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 2 }}>
           <div style={{ fontWeight: 700, fontSize: 22 }}>BloodBridge</div>
           <div style={{ fontSize: 12, color: "#b91c1c" }}>Bridge between donor & receiver</div>
-        </div>
+        </Link>
         {isDashboard && (
-          <button style={{ background: "#f87171", border: "none", borderRadius: 12, padding: "10px 14px", color: "white", cursor: "pointer" }} onClick={() => navigate("/")}>Home</button>
+          <Link style={{ background: "#f87171", color: "white", borderRadius: 12, padding: "10px 14px", textDecoration: "none", fontWeight: 600 }} to="/">Home</Link>
         )}
         {isHome && isLoggedIn && (
-          <button style={{ background: "#f87171", border: "none", borderRadius: 12, padding: "10px 14px", color: "white", cursor: "pointer" }} onClick={() => navigate("/dashboard")}>Dashboard</button>
+          <Link style={{ background: "#f87171", color: "white", borderRadius: 12, padding: "10px 14px", textDecoration: "none", fontWeight: 600 }} to="/dashboard">Dashboard</Link>
         )}
       </div>
 
@@ -65,8 +65,8 @@ export default function NavBar() {
           </>
         ) : (
           <>
-            <button style={{ background: "#b91c1c", border: "none", borderRadius: 12, padding: "10px 14px", color: "white", cursor: "pointer" }} onClick={() => navigate("/login")}>Sign In</button>
-            <button style={{ background: "#ef4444", border: "none", borderRadius: 12, padding: "10px 14px", color: "white", cursor: "pointer" }} onClick={() => navigate("/register")}>Sign Up</button>
+            <Link style={{ background: "#b91c1c", color: "white", borderRadius: 12, padding: "10px 14px", textDecoration: "none", fontWeight: 600 }} to="/login">Sign In</Link>
+            <Link style={{ background: "#ef4444", color: "white", borderRadius: 12, padding: "10px 14px", textDecoration: "none", fontWeight: 600 }} to="/register">Sign Up</Link>
           </>
         )}
       </div>

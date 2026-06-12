@@ -164,7 +164,7 @@ export default function Dashboard() {
         hospitalName: profile?.hospitalName || profile?.name,
         title: `Chat with ${donor.name}`
       });
-      navigate("/chat", { state: { chatId: res.data._id } });
+      navigate(`/chats/${res.data._id}`);
     } catch (err) {
       setError(err.response?.data || "Unable to start chat.");
     }

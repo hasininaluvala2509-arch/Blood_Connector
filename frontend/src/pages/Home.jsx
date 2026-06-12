@@ -1,50 +1,184 @@
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../api/axios";
+import HeroSection from "../components/HeroSection";
+import SOSPanel from "../components/SOSPanel";
+import StatsCards from "../components/StatsCards";
+import DonorStatusPanel from "../components/DonorStatusPanel";
+import NearbyDonors from "../components/NearbyDonors";
 
 export default function Home() {
   const navigate = useNavigate();
+  const sosRef = useRef(null);
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  const [profile, setProfile] = useState(null);
+  const [counts, setCounts] = useState({ activeDonors: null, requestsToday: null });
+
+  useEffect(() => {
+    if (!token) return;
+
+    const loadProfile = async () => {
+      try {
+        const res = await API.get("/auth/profile");
+        setProfile(res.data);
+      } catch {
+        setProfile(null);
+      }
+    };
+
+    loadProfile();
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isToday = (dateValue) => {
+      if (!dateValue) return false;
+      const date = new Date(dateValue);
+      return date.toDateString() === today.toDateString();
+    };
+
+    const loadCounts = async () => {
+      try {
+        if (role === "donor") {
+          const res = await API.get("/request/nearby");
+          const alerts = Array.isArray(res.data) ? res.data : [];
+          const todays = alerts.filter((alert) => isToday(alert.createdAt)).length;
+          setCounts({ activeDonors: alerts.length || null, requestsToday: todays || 0 });
+        } else if (role === "hospital") {
+          const res = await API.get("/request/hospital");
+          const alerts = Array.isArray(res.data.alerts) ? res.data.alerts : [];
+          const todays = alerts.filter((alert) => isToday(alert.createdAt)).length;
+          setCounts({ activeDonors: null, requestsToday: todays || alerts.length || 0 });
+        } else {
+          setCounts({ activeDonors: null, requestsToday: null });
+        }
+      } catch {
+        setCounts({ activeDonors: null, requestsToday: null });
+      }
+    };
+
+    loadCounts();
+  }, [token, role]);
+
+  const scrollToSOS = () => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    sosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleSignIn = () => navigate("/login");
+  const handleRegister = () => navigate("/register");
+
+  const isLoggedIn = Boolean(token);
 
   return (
-    <div style={{ background: "#fdf2f2", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ width: "100%", maxWidth: 980, background: "white", borderRadius: 28, boxShadow: "0 25px 70px rgba(15, 23, 42, 0.15)", padding: "48px 36px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 32 }}>
+    <div style={{ background: "#f8fafc", minHeight: "100vh", padding: 24 }}>
+      <div style={{ width: "100%", maxWidth: 1220, margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "18px 0" }}>
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 999, background: "#fee2e2", color: "#b91c1c", fontWeight: 700, fontSize: 14 }}>
               <span>🩸</span> BloodBridge
             </div>
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button style={{ background: "#b91c1c", color: "white", border: "none", padding: "12px 20px", borderRadius: 12, cursor: "pointer" }} onClick={() => navigate("/login")}>Sign In</button>
-            <button style={{ background: "#ef4444", color: "white", border: "none", padding: "12px 20px", borderRadius: 12, cursor: "pointer" }} onClick={() => navigate("/register")}>Register</button>
+            {isLoggedIn ? (
+              <button className="button-hover" style={{ background: "#ef4444", color: "white", border: "none", padding: "12px 20px", borderRadius: 12, cursor: "pointer" }} onClick={() => navigate("/dashboard")}>Dashboard</button>
+            ) : (
+              <>
+                <button className="button-hover" style={{ background: "#b91c1c", color: "white", border: "none", padding: "12px 20px", borderRadius: 12, cursor: "pointer" }} onClick={handleSignIn}>Sign In</button>
+                <button className="button-hover" style={{ background: "#ef4444", color: "white", border: "none", padding: "12px 20px", borderRadius: 12, cursor: "pointer" }} onClick={handleRegister}>Register</button>
+              </>
+            )}
           </div>
         </div>
 
-        <div style={{ textAlign: "center", padding: "80px 24px" }}>
-          <div style={{ fontSize: 80, lineHeight: 1, marginBottom: 24 }}>🩸</div>
-          <h1 style={{ fontSize: 64, margin: 0, color: "#991b1b", fontWeight: 900 }}>BloodBridge</h1>
-          <p style={{ maxWidth: 700, margin: "24px auto 0", fontSize: 20, color: "#475569", lineHeight: 1.7 }}>
-            Your bridge between donors and hospitals. Send emergency blood alerts, find nearby donors, and coordinate life-saving donations quickly.
-          </p>
-        </div>
+        <HeroSection onRequestNow={scrollToSOS} />
 
-        <div style={{ display: "grid", gap: 22, marginTop: 12 }}>
-          <div style={{ padding: 24, borderRadius: 24, background: "#fee2e2", border: "1px solid #fecaca" }}>
-            <h2 style={{ margin: 0, color: "#991b1b" }}>SOS Emergency Contact</h2>
-            <p style={{ marginTop: 14, color: "#7f1d1d", lineHeight: 1.8 }}>
-              Immediate SOS line: <strong>112</strong>. Call now for urgent response and emergency dispatch.
-            </p>
-            <button
-              style={{ marginTop: 18, background: "#f87171", color: "white", border: "none", padding: "12px 20px", borderRadius: 14, cursor: "pointer", fontWeight: 700 }}
-              onClick={() => window.location.href = "tel:112"}
-            >
-              Call SOS
-            </button>
+        <StatsCards activeDonors={counts.activeDonors} requestsToday={counts.requestsToday} />
+
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24, marginTop: 32, alignItems: "start" }}>
+          <div style={{ display: "grid", gap: 24 }}>
+            <div ref={sosRef}>
+              {isLoggedIn ? (
+                role === "hospital" ? (
+                  <SOSPanel profile={profile} />
+                ) : (
+                  <div style={{ background: "#ffffff", borderRadius: 28, boxShadow: "0 24px 60px rgba(15, 23, 42, 0.08)", padding: 32 }}>
+                    <div style={{ marginBottom: 21, color: "#a82c13", fontWeight: 700, fontSize: 22 }}>App. Update under progress</div>
+                    <div style={{ marginBottom: 16, color: "#0f172a", fontWeight: 700, fontSize: 22 }}>SOS restricted to hospitals</div>
+                    <p style={{ color: "#475569", lineHeight: 1.8, marginBottom: 24 }}>
+                      Only hospital accounts can create emergency SOS requests. Donors can view and respond to alerts.
+                    </p>
+                    <button
+                      type="button"
+                      style={{ width: "100%", background: "#b91c1c", color: "white", border: "none", borderRadius: 18, padding: "16px 24px", cursor: "pointer", fontWeight: 700 }}
+                      onClick={() => navigate(role === "hospital" ? "/dashboard" : "/find-donors")}
+                    >
+                      Go to your dashboard
+                    </button>
+                  </div>
+                )
+              ) : (
+                <div style={{ background: "#ffffff", borderRadius: 28, boxShadow: "0 24px 60px rgba(15, 23, 42, 0.08)", padding: 32 }}>
+                  <div style={{ marginBottom: 16, color: "#0f172a", fontWeight: 700, fontSize: 22 }}>Sign in to create SOS alerts</div>
+                  <p style={{ color: "#475569", lineHeight: 1.8, marginBottom: 24 }}>
+                    Only logged in donors or hospitals can submit emergency requests.
+                  </p>
+                  <button
+                    type="button"
+                    style={{ width: "100%", background: "#e53935", color: "white", border: "none", borderRadius: 18, padding: "16px 24px", cursor: "pointer", fontWeight: 700 }}
+                    onClick={handleSignIn}
+                  >
+                    Sign in to continue
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isLoggedIn ? (
+              role === "hospital" ? (
+                <NearbyDonors profile={profile} />
+              ) : (
+                <div style={{ background: "#ffffff", borderRadius: 28, boxShadow: "0 24px 60px rgba(15, 23, 42, 0.08)", padding: 32 }}>
+                  <div style={{ marginBottom: 16, color: "#0f172a", fontWeight: 700, fontSize: 22 }}>Hospital requests is on your dashboard view</div>
+                  <p style={{ color: "#475569", lineHeight: 1.8, marginBottom: 24 }}>
+                    Donor can see new requests made by hospitals for nearby emergency alerts also can chat with hospitals for donation and other details . Hospital accounts can see real nearby donors here.
+                  </p>
+                  <button
+                    type="button"
+                    style={{ width: "100%", background: "#b91c1c", color: "white", border: "none", borderRadius: 18, padding: "16px 24px", cursor: "pointer", fontWeight: 700 }}
+                    onClick={() => navigate(role === "hospital" ? "/dashboard" : "/find-donors")}
+                  >
+                    Go to your dashboard
+                  </button>
+                </div>
+              )
+            ) : (
+              <div style={{ background: "#ffffff", borderRadius: 28, boxShadow: "0 24px 60px rgba(15, 23, 42, 0.08)", padding: 32 }}>
+                <div style={{ marginBottom: 16, color: "#0f172a", fontWeight: 700, fontSize: 22 }}>Nearby donors require sign in</div>
+                <p style={{ color: "#475569", lineHeight: 1.8, marginBottom: 24 }}>
+                  Registered users can see donor cards, open chat with alert originators, and respond safely.
+                </p>
+                <button
+                  type="button"
+                  style={{ width: "100%", background: "#b91c1c", color: "white", border: "none", borderRadius: 18, padding: "16px 24px", cursor: "pointer", fontWeight: 700 }}
+                  onClick={handleRegister}
+                >
+                  Register to view donors
+                </button>
+              </div>
+            )}
           </div>
-          <div style={{ padding: 24, borderRadius: 24, background: "#fee2e2", border: "1px solid #fecaca" }}>
-            <h2 style={{ margin: 0, color: "#991b1b" }}>About BloodBridge</h2>
-            <p style={{ marginTop: 14, color: "#475569", lineHeight: 1.8 }}>
-              BloodBridge connects hospitals in urgent need with eligible donors nearby. It helps hospitals post alerts, donors respond fast, and both parties chat securely until the donation is complete.
-            </p>
-          </div>
+
+          <DonorStatusPanel profile={profile} />
         </div>
       </div>
     </div>

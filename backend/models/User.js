@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema(
     phone: String,
     hospitalName: String,
     address: String,
+    active: {
+      type: Boolean,
+      default: true
+    },
     donationCount: {
       type: Number,
       default: 0
