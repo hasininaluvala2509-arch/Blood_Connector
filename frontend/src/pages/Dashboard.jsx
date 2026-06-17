@@ -75,6 +75,14 @@ export default function Dashboard() {
     try {
       const res = await API.get("/auth/profile");
       setProfile(res.data);
+      if (res.data && res.data.role === "hospital") {
+        setForm(prev => ({
+          ...prev,
+          location: prev.location || res.data.address || "",
+          lat: prev.lat === "19.0760" && res.data.location?.coordinates ? String(res.data.location.coordinates[1]) : prev.lat,
+          lng: prev.lng === "72.8777" && res.data.location?.coordinates ? String(res.data.location.coordinates[0]) : prev.lng,
+        }));
+      }
     } catch (err) {
       setError(err.response?.data || "Unable to load profile.");
     }
@@ -170,6 +178,28 @@ export default function Dashboard() {
     }
   };
 
+  const handleUseLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm(prev => ({
+          ...prev,
+          lat: position.coords.latitude.toFixed(5),
+          lng: position.coords.longitude.toFixed(5),
+        }));
+        setMessage("Location captured from GPS.");
+        setError("");
+      },
+      (err) => {
+        setError(`Location error: ${err.message}`);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
   return (
     <div style={{ background: "#fdf2f2", minHeight: "100vh", padding: 24 }}>
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: 24, background: "white", borderRadius: 20, boxShadow: "0 20px 40px rgba(15, 23, 42, 0.08)" }}>
@@ -256,19 +286,30 @@ export default function Dashboard() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
               <div>
                 <label style={{ display: "block", marginBottom: 8, color: "#475569" }}>Latitude</label>
-                <input
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
-                  value={form.lat}
-                  onChange={(e) => setForm({ ...form, lat: e.target.value })}
-                />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
+                    value={form.lat}
+                    onChange={(e) => setForm({ ...form, lat: e.target.value })}
+                  />
+                </div>
               </div>
               <div>
                 <label style={{ display: "block", marginBottom: 8, color: "#475569" }}>Longitude</label>
-                <input
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
-                  value={form.lng}
-                  onChange={(e) => setForm({ ...form, lng: e.target.value })}
-                />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
+                    value={form.lng}
+                    onChange={(e) => setForm({ ...form, lng: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUseLocation}
+                    style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fca5a5", borderRadius: 12, padding: "0 16px", cursor: "pointer", fontWeight: 700, whiteSpace: "nowrap" }}
+                  >
+                    Use GPS
+                  </button>
+                </div>
               </div>
             </div>
             <div>
@@ -380,6 +421,7 @@ export default function Dashboard() {
                       </button>
                     </div>
                     <div style={{ marginTop: 12, color: "#334155" }}>
+                      <div>Status: {donor.active !== false ? "🟢 Available" : "🔴 Not Available"}</div>
                       <div>Blood Group: {donor.bloodGroup}</div>
                       <div>Phone: {donor.phone}</div>
                       <div>Last Donation: {donor.lastDonationDate ? new Date(donor.lastDonationDate).toLocaleDateString() : "Unknown"}</div>

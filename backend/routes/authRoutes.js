@@ -187,7 +187,8 @@ router.get("/profile", verifyToken, async (req, res) => {
       lastDonationDate: user.lastDonationDate,
       donationCount: user.donationCount,
       successfulMissions: user.successfulMissions,
-      location: user.location
+      location: user.location,
+      active: user.active
     });
   } catch (error) {
     console.log(error);
@@ -220,11 +221,13 @@ router.put("/profile", verifyToken, async (req, res) => {
       lastDonationDate,
       hospitalName,
       address,
-      location
+      location,
+      active
     } = req.body;
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
+    if (active !== undefined) user.active = active;
     if (user.role === "donor") {
       if (bloodGroup) user.bloodGroup = bloodGroup;
       if (lastDonationDate) user.lastDonationDate = new Date(lastDonationDate);

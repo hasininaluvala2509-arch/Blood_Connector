@@ -1,15 +1,29 @@
 import { useEffect, useState } from "react";
+import API from "../api/axios";
 
-export default function DonorStatusPanel({ profile }) {
+export default function DonorStatusPanel({ profile, onStatusChange }) {
   const [available, setAvailable] = useState(true);
   const isLoggedIn = Boolean(profile);
   const isDonor = profile?.role === "donor";
 
   useEffect(() => {
-    if (isDonor) {
-      setAvailable(profile.available !== undefined ? profile.available : true);
+    if (isDonor && profile) {
+      setAvailable(profile.active !== undefined ? profile.active : true);
     }
   }, [profile, isDonor]);
+
+  const toggleStatus = async () => {
+    try {
+      const newStatus = !available;
+      await API.put("/auth/profile", { active: newStatus });
+      setAvailable(newStatus);
+      if (onStatusChange) {
+        onStatusChange();
+      }
+    } catch (err) {
+      console.error("Failed to update status", err);
+    }
+  };
 
   return (
     <section className="card" style={{ display: "grid", gap: 20, padding: 28 }}>
@@ -52,7 +66,7 @@ export default function DonorStatusPanel({ profile }) {
           <button
             type="button"
             className="secondary-button button-hover"
-            onClick={() => setAvailable((current) => !current)}
+            onClick={toggleStatus}
             style={{ width: "100%", justifyContent: "center" }}>
             {available ? "Switch to Not Available" : "Switch to Available"}
           </button>

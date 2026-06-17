@@ -71,6 +71,28 @@ export default function Profile() {
     }
   };
 
+  const handleCaptureGPS = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm(prev => ({
+          ...prev,
+          lat: position.coords.latitude.toFixed(5),
+          lng: position.coords.longitude.toFixed(5)
+        }));
+        setMessage("GPS Location captured.");
+        setError("");
+      },
+      (err) => {
+        setError(`Location error: ${err.message}`);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
   if (!profile) {
     return null;
   }
@@ -165,12 +187,21 @@ export default function Profile() {
               </div>
               <div>
                 <label style={{ display: "block", marginBottom: 8, color: "#475569" }}>Longitude</label>
-                <input
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
-                  value={form.lng}
-                  onChange={(e) => setForm({ ...form, lng: e.target.value })}
-                  placeholder="72.8777"
-                />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    style={{ width: "100%", padding: 14, borderRadius: 12, border: "1px solid #cbd5e1" }}
+                    value={form.lng}
+                    onChange={(e) => setForm({ ...form, lng: e.target.value })}
+                    placeholder="72.8777"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCaptureGPS}
+                    style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fca5a5", borderRadius: 12, padding: "0 16px", cursor: "pointer", fontWeight: 700, whiteSpace: "nowrap" }}
+                  >
+                    Use GPS
+                  </button>
+                </div>
               </div>
             </div>
           </div>

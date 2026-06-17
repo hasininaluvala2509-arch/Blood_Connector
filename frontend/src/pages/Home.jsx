@@ -69,6 +69,15 @@ export default function Home() {
     loadCounts();
   }, [token, role]);
 
+  const fetchActiveDonorsCount = async () => {
+    try {
+      const resCount = await API.get("/auth/active-donors-count");
+      setCounts(prev => ({ ...prev, activeDonors: resCount.data?.count ?? prev.activeDonors }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const scrollToSOS = () => {
     if (!token) {
       navigate("/login");
@@ -87,7 +96,7 @@ export default function Home() {
       <div style={{ width: "100%", maxWidth: 1220, margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "18px 0" }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 999, background: "#fee2e2", color: "#b91c1c", fontWeight: 700, fontSize: 14 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 999, background: "#fee2e2", color: "#b91c1c", fontWeight: 700, fontSize: 25 }}>
               <span>🩸</span> BloodBridge
             </div>
           </div>
@@ -181,7 +190,7 @@ export default function Home() {
             )}
           </div>
 
-          <DonorStatusPanel profile={profile} />
+          <DonorStatusPanel profile={profile} onStatusChange={fetchActiveDonorsCount} />
         </div>
       </div>
     </div>

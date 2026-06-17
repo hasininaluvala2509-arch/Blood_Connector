@@ -96,7 +96,6 @@ router.get("/nearby", verifyToken, checkRole("donor"), async (req, res) => {
         $geoNear: {
           near: user.location,
           distanceField: "distance",
-          maxDistance: 30000,
           spherical: true,
           query: { status: "open" }
         }
@@ -153,7 +152,6 @@ router.get("/alert/:id/donors", verifyToken, checkRole("hospital"), async (req, 
         $geoNear: {
           near: alert.geoLocation,
           distanceField: "distance",
-          maxDistance: 30000,
           spherical: true
         }
       },
@@ -185,7 +183,8 @@ router.get("/alert/:id/donors", verifyToken, checkRole("hospital"), async (req, 
         bloodGroup: donor.bloodGroup,
         phone: donor.phone,
         distance: (donor.distance / 1000).toFixed(2) + " km",
-        lastDonationDate: donor.lastDonationDate
+        lastDonationDate: donor.lastDonationDate,
+        active: donor.active
       }))
     );
   } catch (error) {
@@ -249,15 +248,13 @@ router.get("/donors", verifyToken, checkRole("hospital"), async (req, res) => {
             coordinates: [parseFloat(lng), parseFloat(lat)]
           },
           distanceField: "distance",
-          maxDistance: 30000,
           spherical: true
         }
       },
       {
         $match: {
           role: "donor",
-          ...(bloodGroup ? { bloodGroup } : {}),
-          active: true
+          ...(bloodGroup ? { bloodGroup } : {})
         }
       },
       {
@@ -277,7 +274,8 @@ router.get("/donors", verifyToken, checkRole("hospital"), async (req, res) => {
 
     const finalDonors = eligibleDonors.map((d) => ({
       ...d,
-      distance: (d.distance / 1000).toFixed(2) + " km"
+      distance: (d.distance / 1000).toFixed(2) + " km",
+      active: d.active
     }));
 
     res.json(finalDonors);
